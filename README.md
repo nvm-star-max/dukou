@@ -1,15 +1,17 @@
-# 渡口 / Dukou
+# Dukou
 
-MIT 许可，Node.js 22+（使用仍获官方支持的 LTS 版本）。项目目前有两种运行方式：
+[English](README.md) · [简体中文](README.zh-CN.md) · [Security policy](SECURITY.md)
 
-界面默认英文，右上角“中文”可切换，选择保存在当前浏览器。English quick start: [README.en.md](README.en.md). 安全边界与漏洞报告：[SECURITY.md](SECURITY.md)。
+Dukou (渡口) is an experimental, MIT-licensed file transfer tool for Windows, macOS, and Linux. It requires Node.js 22 or newer; use a still-supported LTS release. The interface defaults to English and can be switched to Chinese with the top-right `中文` button; the choice is stored in the current browser.
 
-- **对等设备互传**：每台设备运行客户端，同一账号下各自生成独立设备密钥；两端都能授权对方搜索、拉取，也能主动推送。公网需要一台轻量发现/中继服务，文件内容由设备之间加密，中继不保存明文。
-- **轻量浏览器分享**：只在一台电脑运行主机，其他设备直接用浏览器登录、拉取和手动上传。浏览器访问端不能让别人搜索自己的完整文件系统，因此不等于对等设备模式。
+There are two ways to run it:
 
-## 对等设备互传
+- **Peer transfer**: every participating device runs a client and generates its own device key under the same account. Both ends can authorize the other to search and pull, and can also push. Across the internet a lightweight discovery/relay service is needed; file contents are encrypted end to end between devices, and the relay does not store plaintext.
+- **Lightweight browser sharing**: a host runs on one computer and other devices log in with a browser to pull and manually upload. A browser visitor cannot let others search its full filesystem, so this is not the same as peer mode.
 
-推荐用统一 CLI 启动。先在每台机器安装 Node.js 22+ 并在项目目录执行 `npm ci`：
+## Peer transfer
+
+The recommended way to start is the unified CLI. First install Node.js 22+ on every machine and run `npm ci` in the project directory. Run each long-lived service in its own terminal or service manager:
 
 ```sh
 node src/cli.mjs doctor
@@ -17,70 +19,70 @@ node src/cli.mjs relay --host 127.0.0.1 --port 8787 --data .data/server
 node src/cli.mjs peer --port 8788 --peer-port 8789 --data .data/my-device
 ```
 
-`relay` 是发现/加密数据中继，`peer` 是完整对等设备，`direct` 是仅一台主机运行的轻量浏览器分享模式。CLI 的 `--help` 可查看各角色参数；`doctor --url https://你的发现服务域名` 检查 Node、常用端口和发现服务健康接口。`npm run cli -- peer ...` 也可使用。Windows PowerShell、macOS 和 Linux 使用相同的 `node src/cli.mjs` 命令，无需 shell 环境变量语法。请为每台 peer 使用**独立数据目录**，不可复制设备私钥。
+`relay` is the discovery/encrypted data relay, `peer` is a full peer device, and `direct` is the single-host lightweight browser sharing mode. Run `node src/cli.mjs help` to see all role options. `doctor --url https://your-relay-domain` checks Node, common local ports, and the relay health endpoint. `npm run cli -- peer ...` also works. Windows PowerShell, macOS, and Linux use the same `node src/cli.mjs` commands without shell environment-variable syntax. Use a **separate data directory per peer** and never copy a device private key.
 
-CLI 帮助和诊断默认英文，`node src/cli.mjs help --lang zh` 切换中文。服务器运行 `relay` 不需要图形桌面，可交给系统服务管理器启动，并使用专用持久化目录和低权限系统账号。完整 `peer` 暂时仍需要本机浏览器完成首次配置；本版没有完全无界面的设备加入命令、原生安装包或自动安装后台服务。不通过命令行参数传入密码或密钥。
+CLI help and diagnostics default to English; `node src/cli.mjs help --lang zh` switches them to Chinese. A server running `relay` does not need a graphical desktop, so it can be started by the system service manager with a dedicated persistent directory and a low-privilege system account. A full `peer` still needs a local browser for first-time setup; this release has no fully headless device enrollment command, native installer package, or background-service auto-installer. Do not pass passwords or keys as command-line arguments.
 
-公网反向代理部署轻量主机时可使用 `node src/cli.mjs direct --http 1 --trust-proxy 1`，但 HTTP 后端只能监听本机回环地址，不能直接暴露公网；`--trust-proxy 1` 仅在可信本机代理前使用。
+When deploying a lightweight host behind a public reverse proxy, you can use `node src/cli.mjs direct --http 1 --trust-proxy 1`, but the HTTP backend may only listen on the local loopback address and must not be exposed directly to the internet; use `--trust-proxy 1` only behind a trusted local proxy.
 
-一台可访问的电脑运行发现/中继服务（可以与某个客户端在同一台机器上）：
+Run the discovery/relay service on one reachable computer (it can share a machine with a client):
 
 ```sh
 npm ci
 HOST=127.0.0.1 npm run server
 ```
 
-每台 Windows、macOS 或 Linux 电脑分别运行 `npm run client`，打开各自的 `http://127.0.0.1:8788`。在第一台设备创建账号，其余设备可使用同一账号密码，或由已登录设备在“设置”中生成十分钟有效、只能使用一次的加入密钥。每台设备会产生自己的 Ed25519/X25519 密钥，后续以设备密钥认证；**不要把同一份私钥复制到多台设备，也不要把轻量浏览器分享模式的长期访问密钥当成加入密钥**。不同电脑上的客户端数据目录必须各不相同。Windows PowerShell 中设置环境变量使用 `$env:CLIENT_PORT="8788"` 语法。
+Run `npm run client` on each Windows, macOS, or Linux computer and open its own `http://127.0.0.1:8788`. Create the account on the first device; other devices can use the same account and password, or a signed-in device can generate a single-use enrollment key valid for ten minutes in Settings. Every device generates its own Ed25519/X25519 keys and later authenticates with its device key; **do not copy the same private key to multiple devices, and do not treat the direct mode long-term access key as an enrollment key**. Each device needs its own state; the same local directory name can be used on different computers, but never clone an already configured device's data directory. In Windows PowerShell, set environment variables with `$env:CLIENT_PORT="8788"` syntax.
 
-两端各自在本机“设置”中选择共享文件夹，并为对方开启“浏览”和“下载”；需要接收主动推送的一端还应开启“推送给我”。三项权限默认关闭。之后任意一端都可搜索对方授权目录并拉取，或选择文件推送，对方逐项确认。下载完成的任务提供“打开所在位置”。测试中还验证了 A 拉取 B 与 B 拉取 A 两个方向。
+On each end, select a shared folder in the local Settings and enable **Browse** and **Download** for the other side; an end that should receive an active push must also enable **Allow pushes**. All three permissions default to off. Either end can then search the other's authorized directories and pull, or pick a file to push, with the other side confirming each item. Completed downloads offer **Show in folder**. Testing verified both A-pulls-B and B-pulls-A directions.
 
-跨网络使用时，把发现/中继服务部署到有公网可达地址的机器上。仓库原有 `compose.yaml` 与 `Caddyfile` 提供 HTTPS 入口；客户端填写该 HTTPS 域名。两端都必须在线。首次看到新设备时，应通过其他可信渠道核对设备指纹；客户端会固定首次看到的签名和加密公钥，后续发现同一设备 ID 的密钥被替换会阻止连接。首次信任仍可能遭到恶意发现服务冒充，不能省略指纹核对。
+For use across networks, deploy the discovery/relay service to a machine with a publicly reachable address. The repository's `compose.yaml` and `Caddyfile` provide an HTTPS entry point; the client enters that HTTPS domain. Both ends must be online. The first time you see a new device, verify its fingerprint through another trusted channel; the client pins the first-seen signing and encryption public keys, and later blocks the connection if the keys under the same device ID are replaced. First trust can still be spoofed by a malicious discovery service, so fingerprint verification cannot be skipped.
 
-对等模式使用设备间 X25519 协商密钥与 AES-256-GCM 加密目录和文件块，接收后校验 SHA-256；发现服务仅转发密文。密码只用于首次加入账号，新设备也可使用一次性加入密钥。浏览、下载、推送权限分别在提供/接收文件的设备上设置，推送还需要接收方逐项确认。不要把公网服务的管理员权限、设备私钥或未轮换的加入密钥交给他人。此 Demo 尚未经独立安全审计，不应作为唯一的敏感资料防线；主机被入侵、首次设备指纹未核对或终端本身感染恶意软件时，传输加密无法补救。
+Peer mode negotiates keys between devices with X25519 and encrypts directories and file chunks with AES-256-GCM, verifying SHA-256 after receipt; the discovery service only forwards ciphertext. Passwords are used only for the initial account join, and a new device can also use a one-time enrollment key. Browse, download, and push permissions are set on the device that provides or receives the files, and a push also requires per-item confirmation by the receiver. Do not give others administrator rights on a public service, device private keys, or unrotated enrollment keys. This demo has not undergone an independent security audit and should not be the only line of defense for sensitive material; encryption cannot compensate if the host is compromised, the first device fingerprint is not verified, or the endpoint itself is infected with malware.
 
-默认通过中继传递端到端加密的数据，不主动连接发现服务提供的局域网地址，入站对等端口也只监听本机。只有在完全信任同账号/已配对设备和发现服务时，才设置 `ENABLE_LAN_DIRECT=1` 允许局域网直连。接收端会在有限时间窗口内拒绝重复密文；十分钟的配对码与加入密钥使用**发现服务的时间**判断过期，不依赖两台设备时钟一致。已暴露的账号密码或访问密钥应立即轮换；同一账号密码可注册新设备，因此不要把它当作只读访问凭证。
+By default data is relayed end to end encrypted; the app does not actively connect to LAN addresses provided by the discovery service, and the inbound peer port listens on loopback only. Set `ENABLE_LAN_DIRECT=1` to allow LAN direct connections only when you fully trust the same-account/paired devices and the discovery service. The receiver rejects duplicate ciphertext within a bounded time window; the ten-minute pairing code and enrollment key use the **discovery service's clock** to decide expiry, not the devices' clocks. Exposed account passwords or access keys should be rotated immediately; the same account password can register a new device, so do not treat it as a read-only access credential.
 
-本版加入了任务和消息队列上限、待确认任务自动过期、规范化密文编码、旧任务重新检查当前共享权限、串行接收写入，以及设备撤销后的会话/加入密钥失效机制。具体上限与仍未解决的风险见 [SECURITY.md](SECURITY.md)。这些措施不能替代独立审计、防火墙、磁盘配额或终端安全。
+This release adds limits on jobs and message queues, automatic expiry of pending tasks, canonical ciphertext encoding, rechecking current sharing permissions for old tasks, serialized receive writes, and invalidation of sessions/enrollment keys after device revocation. See [SECURITY.md](SECURITY.md) for the exact limits and remaining risks. These measures cannot replace an independent audit, a firewall, disk quotas, or endpoint security.
 
-Android 尚无本项目的独立 APK。小米手机若要成为可被搜索/拉取的完整对等设备，需要常驻客户端并获得用户授权的文件访问权限；单纯用浏览器登录不能做到这一点。技术验证可在 Android 的 Termux 中安装 Node.js、运行本项目 `peer` 客户端，再在手机浏览器打开 `http://127.0.0.1:8788`。先执行 `termux-setup-storage` 授予共享存储权限，然后在应用内的本机文件浏览器选择“共享存储”。手机需能访问使用可信 CA 证书的发现服务；Termux 进程和手机不能被系统休眠。此路径尚未在小米设备上实测，也不等同于成品 App。
+Android has no standalone APK for this project. For a Xiaomi phone to become a full peer that can be searched and pulled from, it needs a resident client and user-granted file access permission; logging in with a browser alone cannot do this. As a technical experiment you can install Node.js in Termux on Android, run the project's `peer` client, and open `http://127.0.0.1:8788` in the phone browser. Run `termux-setup-storage` first to grant shared-storage permission, then choose "shared storage" in the app's local file browser. The phone must be able to reach a discovery service using a trusted CA certificate, and neither the Termux process nor the phone may be put to sleep. This path has not been tested on Xiaomi devices and is not equivalent to a finished app.
 
-## 轻量浏览器分享
+## Lightweight browser sharing
 
-在需要提供文件的电脑安装 Node.js 22+，然后在本目录运行：
+Install Node.js 22+ on the computer that will provide files, then run in this directory:
 
 ```sh
 npm ci
 npm start
 ```
 
-在主机电脑上打开终端显示的**本机管理地址**，默认是 `http://127.0.0.1:18789`，创建至少 12 位的主机密码。该 HTTP 入口仅监听本机回环地址，不对局域网或公网开放，避免本机浏览器因自签名证书而直接阻止进入。另一台电脑使用终端显示的 HTTPS 局域网地址登录；自签名证书可能被浏览器拦截，正式使用应改用可信 CA 证书。主机也会显示证书 SHA-256 指纹，手动接受自签名证书时必须通过可信渠道核对。
+On the host computer, open the **local administration address** printed in the terminal, by default `http://127.0.0.1:18789`, and create a host password of at least 12 characters. That HTTP entry listens on the local loopback address only and is not exposed to the LAN or the internet, so the local browser is not blocked by a self-signed certificate. Another computer logs in through the HTTPS LAN address printed in the terminal; the self-signed certificate may be blocked by the browser, so a trusted CA certificate should be used for real use. The host also prints the certificate SHA-256 fingerprint, which must be verified through a trusted channel before manually accepting a self-signed certificate.
 
-Windows PowerShell 同样执行 `npm ci`、`npm start`。主机保持运行并允许系统防火墙的 TCP 18788 入站连接；本机管理端口不应对外开放。可用 `DIRECT_PORT` 修改 HTTPS 端口，`DIRECT_LOCAL_PORT` 修改本机管理端口。主机设置仅能从主机本机的 `localhost` 页面修改。
+Windows PowerShell runs the same `npm ci` and `npm start`. Keep the host running and allow inbound TCP 18788 through the system firewall; the local administration port should not be exposed. Use `DIRECT_PORT` to change the HTTPS port and `DIRECT_LOCAL_PORT` to change the local administration port. Host settings can only be changed from the host's own `localhost` page.
 
-默认只开放管理员明确添加的文件或文件夹，且远端推送默认关闭。主机可在本机管理页使用应用内文件浏览器添加公开位置；无图形桌面时仍可通过浏览器选择，或手动输入绝对路径。文件浏览接口不向远端账号或密钥会话开放。主机还可开启独立上传收件箱并设置单文件上限。远端上传不会覆盖公开文件。整机只读模式需要复选确认并输入 `OPEN ALL`；它会暴露主机进程可读取的系统文件、个人资料和其他程序的密钥，仅供完全信任的场景。应用自身的数据目录被固定排除，但这**不能**保护其他应用的数据。建议使用专门的低权限系统账号运行主机，不要以管理员/root 身份运行。
+By default only files or folders explicitly added by the administrator are shared, and remote push is off by default. The host can add public locations with the in-app file browser on the local administration page; without a graphical desktop you can still choose through the browser or type an absolute path. The file browsing API is not available to remote accounts or key sessions. The host can also enable a separate upload inbox and set a per-file limit. Remote uploads do not overwrite public files. Whole-device read-only mode requires checking a confirmation box and typing `OPEN ALL`; it exposes system files the host process can read, personal data, and other programs' secrets, and is only for fully trusted scenarios. The app's own data directory is always excluded, but this **cannot** protect other applications' data. Use a dedicated low-privilege system account to run the host, not an administrator/root account.
 
-拉取的文件由访问者浏览器保存。下载完成后可从浏览器下载记录选择“在文件夹中显示”；网页本身不能越过浏览器权限打开访问者电脑的下载目录。主机收件箱的文件可在本机管理页使用“打开所在位置”。完整对等设备模式也提供真正的“打开所在位置”按钮。
+Files pulled in direct mode are saved by the visitor's browser. After downloading, the browser's download record offers "Show in folder"; the web page itself cannot open the visitor computer's download directory beyond browser permissions. Files in the host inbox can use "Show in folder" on the local administration page. Full peer mode also provides a real **Show in folder** button.
 
-## 跨网络访问
+## Cross-network access
 
-“无需中心服务”不等于可绕过 NAT：主机必须拥有可从另一台电脑到达的地址。可使用主机的公网 IP 加路由器端口映射，或自己的域名/隧道。应用不提供自动 NAT 穿透和云中继。移动网络或不同运营商之间通常无法仅凭局域网地址直连。
+In **direct browser mode**, "no central service" does not mean NAT can be bypassed: the host must have an address reachable from the other computer. You can use the host's public IP with router port mapping, or your own domain/tunnel. This mode provides no automatic NAT traversal or built-in cloud relay. Mobile networks or different carriers usually cannot connect directly by LAN address alone. **Full peer mode** instead uses your reachable discovery/relay service to forward encrypted messages across networks.
 
-公网推荐用域名与可信 CA 的 HTTPS 证书，由同一台主机上的 Caddy 处理 TLS。将域名 A/AAAA 记录指向主机公网 IP，开放 80/443，使用仓库的 `Caddyfile.direct` 作为 Caddy 配置，然后仅在本机回环地址运行应用：
+For public use, prefer a domain with a trusted CA HTTPS certificate, with TLS handled by Caddy on the same host. Point the domain's A/AAAA records at the host's public IP, open ports 80/443, use the repository's `Caddyfile.direct` as the Caddy configuration, then run the app on the loopback address only:
 
 ```sh
 DIRECT_HTTP=1 DIRECT_TRUST_PROXY=1 npm start
 caddy run --config Caddyfile.direct
 ```
 
-把 `Caddyfile.direct` 的域名改成自己的域名。Windows PowerShell 对应设置 `$env:DIRECT_HTTP="1"`、`$env:DIRECT_TRUST_PROXY="1"` 后运行 `npm start`。不要将这个 HTTP 后端直接暴露到公网，也不要让不受信任的反向代理连接它。若用第三方隧道，应确保隧道只转发到本机回环端口、保留 HTTPS 原始 Host，且覆盖 `X-Forwarded-For` 为真实访问者 IP。应用仅在显式开启 `DIRECT_TRUST_PROXY=1` 并且代理从回环地址接入时信任该头。公网使用时应禁用整机模式，只开放最小必需目录，并按需开启上传。
+Change the domain in `Caddyfile.direct` to your own. In Windows PowerShell set `$env:DIRECT_HTTP="1"` and `$env:DIRECT_TRUST_PROXY="1"`, then run `npm start`. Do not expose this HTTP backend directly to the internet, and do not let an untrusted reverse proxy connect to it. If you use a third-party tunnel, make sure it only forwards to the loopback port, preserves the original HTTPS Host, and overrides `X-Forwarded-For` with the real visitor IP. The app trusts that header only when `DIRECT_TRUST_PROXY=1` is explicitly enabled and the proxy connects from a loopback address. For public use, disable whole-device mode, share only the minimum necessary directories, and enable uploads only as needed.
 
-公网自带保护包括：scrypt 密码哈希、256 位随机访问密钥的哈希存储、登录限流、12 小时 HttpOnly/SameSite 会话、同源写操作校验、可轮换密钥、主机本地管理限制、路径穿越与共享目录外符号链接阻断、只读拉取、单文件上传上限和活动记录。访问密钥轮换会立即撤销所有密钥登录会话。账号密码会话不会随密钥轮换撤销；怀疑主机密码泄露时，应停止服务并重新初始化专用数据目录，或先限制公网入口。
+Built-in public protections include scrypt password hashing, hashed storage of 256-bit random access keys, login rate limiting, 12-hour HttpOnly/SameSite sessions, same-origin write validation, rotatable keys, host-local-only administration, path traversal and out-of-share symlink blocking, read-only pulls, a per-file upload limit, and an activity log. Rotating an access key immediately revokes all key-based sessions. Account/password sessions are not revoked by key rotation; if you suspect the host password is leaked, stop the service and reinitialize the dedicated data directory, or first restrict the public entry point.
 
-这是供验证的小规模 Demo，并非经过独立安全审计的公网文件服务。无端到端加密：HTTPS 保护传输，主机始终能看到文件。活动记录与上传内容存在主机磁盘中；请自行管理磁盘空间、备份和操作系统防火墙。推荐在公网入口再加防火墙白名单或 VPN。
+This is a small-scale demo for verification, not an independently audited public file service. There is no end-to-end encryption in direct mode: HTTPS protects transport, and the host can always see the files. Activity logs and uploaded content live on the host disk; manage disk space, backups, and the operating-system firewall yourself. For a public entry point, add a firewall allowlist or VPN.
 
-## 本机双设备验证
+## Two peer devices on one computer
 
-同一台电脑上模拟两台对等设备时，为它们指定不同端口和数据目录：
+To simulate two peers on the same computer, give them different ports and data directories:
 
 ```sh
 HOST=127.0.0.1 npm run server
@@ -88,12 +90,14 @@ CLIENT_PORT=8788 PEER_PORT=8789 TRANSFER_CLIENT_DATA=.data/client-a npm run clie
 CLIENT_PORT=8790 PEER_PORT=8791 TRANSFER_CLIENT_DATA=.data/client-b npm run client
 ```
 
-在 `http://127.0.0.1:8788` 和 `http://127.0.0.1:8790` 分别配置相同账号，服务端地址为 `http://127.0.0.1:8787`。这两个客户端是对等的，与单机浏览器分享模式的数据目录和访问密钥彼此独立。
+Configure the same account at `http://127.0.0.1:8788` and `http://127.0.0.1:8790` with the server address `http://127.0.0.1:8787`. These two clients are peers, and their data directories and access keys are independent of the single-host browser sharing mode.
 
-## 开发验证
+## Development and verification
 
 ```sh
 npm test
 ```
 
-CI 已配置 Windows、macOS、Linux × Node.js 22/24 自动检查，实际结果见 [GitHub Actions](https://github.com/nvm-star-max/dukou/actions)。这不代表已经验证原生选择器、桌面文件管理器、Android 实机、防火墙配置或真实跨公网速度。所有协议回归输入均在临时本机测试环境中运行，不扫描第三方系统。
+CI is configured to check Windows, macOS, and Linux × Node.js 22/24; see [GitHub Actions](https://github.com/nvm-star-max/dukou/actions) for actual results. This does not mean native pickers, desktop file managers, real Android devices, firewall configuration, or real cross-network speeds have been verified. All protocol regression inputs run in a temporary local test environment and do not scan third-party systems.
+
+Code comments and default documentation use English. Chinese localization remains supported. See [CONTRIBUTING.md](CONTRIBUTING.md) for contribution conventions.
