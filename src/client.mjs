@@ -51,7 +51,8 @@ const iconsDir = path.resolve(publicDir, "../node_modules/lucide-static/icons");
 function privatePath(actual) {
   let privateDir = dataDir;
   try {
-    privateDir = fs.realpathSync(dataDir);
+    // Match fs.promises.realpath's native Windows short/long path resolution.
+    privateDir = fs.realpathSync.native(dataDir);
   } catch {
     /* Data directory may not exist before setup. */
   }

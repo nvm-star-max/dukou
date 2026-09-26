@@ -70,11 +70,12 @@ const housekeeping = setInterval(() => {
   }
 }, 60_000);
 housekeeping.unref();
-const privateDataDir = fs.realpathSync(dataDir);
+// Use the same native canonicalization as asynchronous filesystem access.
+const privateDataDir = fs.realpathSync.native(dataDir);
 const privatePaths = [privateDataDir];
 if (process.env.DIRECT_TLS_KEY) {
   try {
-    privatePaths.push(fs.realpathSync(process.env.DIRECT_TLS_KEY));
+    privatePaths.push(fs.realpathSync.native(process.env.DIRECT_TLS_KEY));
   } catch {
     /* TLS startup reports a missing custom key when configured. */
   }
