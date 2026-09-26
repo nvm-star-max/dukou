@@ -1,0 +1,38 @@
+html:not([data-i18n-ready]) body {
+  visibility: hidden;
+}
+.language-toggle {
+  min-width: 55px;
+  min-height: 32px;
+  border: 1px solid #667a70;
+  border-radius: 4px;
+  background: transparent;
+  color: inherit;
+  padding: 5px 9px;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.language-toggle:hover {
+  background: #ffffff18;
+}
+.setup-form {
+  position: relative;
+}
+.setup-form > .language-toggle {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  color: #243c35;
+  border-color: #c9d7cf;
+}
+.auth-top .language-toggle {
+  margin-left: auto;
+}
+@media (max-width: 650px) {
+  .language-toggle {
+    min-width: 48px;
+    padding: 5px;
+  }
+}

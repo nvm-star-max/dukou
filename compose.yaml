@@ -1,0 +1,28 @@
+services:
+  discovery:
+    build: .
+    restart: unless-stopped
+    volumes:
+      - discovery-data:/data
+    networks:
+      - internal
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    environment:
+      TRANSFER_DOMAIN: ${TRANSFER_DOMAIN:?Set TRANSFER_DOMAIN in .env}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    networks:
+      - internal
+networks:
+  internal:
+volumes:
+  discovery-data:
+  caddy-data:
+  caddy-config:

@@ -1,0 +1,3 @@
+{$TRANSFER_DOMAIN} {
+  reverse_proxy discovery:8787
+}

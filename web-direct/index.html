@@ -1,0 +1,316 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#17221f" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23ffd078'/%3E%3Cpath d='M8 23V9h9c4 0 6 2 6 5s-2 5-6 5h-4' fill='none' stroke='%2317221f' stroke-width='3'/%3E%3C/svg%3E"
+    />
+    <title>渡口 · 文件直连</title>
+    <link rel="stylesheet" href="/style.css" />
+    <link rel="stylesheet" href="/local-picker.css" />
+    <link rel="stylesheet" href="/i18n.css" />
+    <script type="module" src="/app.js"></script>
+  </head>
+  <body>
+    <section id="auth" class="auth-shell hidden">
+      <div class="auth-top">
+        <div class="logo">P<span>/</span></div>
+        <span>渡口 <small>PORT</small></span>
+      </div>
+      <main class="auth-main">
+        <div class="auth-label">PRIVATE FILE LINK</div>
+        <h1 id="auth-title">连接到文件</h1>
+        <p id="auth-subtitle">使用账号密码或访问密钥登录</p>
+        <form id="auth-form">
+          <div
+            id="login-switch"
+            class="segmented"
+            role="group"
+            aria-label="登录方式"
+          >
+            <button id="mode-password" type="button" class="active">
+              账号密码
+            </button>
+            <button id="mode-key" type="button">访问密钥</button>
+          </div>
+          <label id="username-wrap"
+            >账号<input
+              id="username"
+              name="username"
+              autocomplete="username"
+              required
+          /></label>
+          <label id="password-wrap"
+            >密码<input
+              id="password"
+              name="password"
+              type="password"
+              autocomplete="current-password"
+              required
+          /></label>
+          <label id="key-wrap" class="hidden"
+            >访问密钥<input
+              id="access-key"
+              name="accessKey"
+              type="password"
+              autocomplete="off"
+          /></label>
+          <button
+            id="auth-submit"
+            class="button primary auth-submit"
+            type="submit"
+          >
+            进入文件
+          </button>
+          <p id="auth-error" class="error" role="alert"></p>
+        </form>
+        <div id="auth-fingerprint" class="auth-fingerprint"></div>
+      </main>
+      <footer class="auth-footer">文件始终保留在主机上</footer>
+    </section>
+
+    <div id="app" class="app hidden">
+      <header class="topbar">
+        <div class="brand">
+          <div class="logo">P<span>/</span></div>
+          <div class="brand-name">渡口 <small>PORT</small></div>
+          <span class="top-divider"></span
+          ><span class="host-label" id="host-name" translate="no"></span>
+        </div>
+        <nav class="top-nav" aria-label="主导航">
+          <button id="files-tab" class="nav-tab active" type="button">
+            文件
+          </button>
+          <button id="admin-tab" class="nav-tab hidden" type="button">
+            主机设置
+          </button>
+        </nav>
+        <div class="top-right">
+          <span class="live-dot"></span><span class="online-label">已连接</span
+          ><button
+            id="logout"
+            class="icon-button dark"
+            type="button"
+            title="退出登录"
+            aria-label="退出登录"
+          >
+            <img src="/icons/log-out.svg" alt="" />
+          </button>
+        </div>
+      </header>
+
+      <div id="files-view" class="files-layout">
+        <aside class="rail">
+          <div class="rail-title">访问范围 <span id="scope-badge"></span></div>
+          <div id="roots" class="roots"></div>
+          <div class="rail-bottom">
+            <div class="rail-kicker">连接地址</div>
+            <div id="current-address" class="address"></div>
+            <button id="copy-address" class="text-command" type="button">
+              <img src="/icons/copy.svg" alt="" />复制地址
+            </button>
+          </div>
+        </aside>
+        <main class="browser-area">
+          <div class="page-head">
+            <div>
+              <div class="section-label">FILES / 文件</div>
+              <h1 id="location-title">选择位置</h1>
+            </div>
+            <button id="upload-button" class="button primary" type="button">
+              <img src="/icons/upload.svg" alt="" />推送文件
+            </button>
+          </div>
+          <div class="path-row">
+            <div id="breadcrumbs" class="breadcrumbs"></div>
+            <button
+              id="refresh-files"
+              class="icon-button"
+              type="button"
+              title="刷新"
+              aria-label="刷新"
+            >
+              <img src="/icons/refresh-cw.svg" alt="" />
+            </button>
+          </div>
+          <div class="search-row">
+            <img src="/icons/search.svg" alt="" /><input
+              id="search"
+              type="search"
+              placeholder="搜索当前共享位置"
+              aria-label="搜索当前共享位置"
+            />
+          </div>
+          <div class="table-header">
+            <span>名称</span><span>大小</span><span>修改时间</span><span></span>
+          </div>
+          <div id="files" class="file-table"></div>
+          <div id="files-empty" class="files-empty">请选择左侧的共享位置</div>
+          <section class="recent-band">
+            <div class="band-head">
+              <h2>最近活动</h2>
+              <span>仅显示最近 30 项</span>
+            </div>
+            <div id="activity" class="activity-list"></div>
+          </section>
+        </main>
+      </div>
+
+      <main id="admin-view" class="admin-view hidden">
+        <div class="page-head">
+          <div>
+            <div class="section-label">HOST / 主机</div>
+            <h1>共享与访问</h1>
+          </div>
+          <span class="local-badge"
+            ><img src="/icons/monitor.svg" alt="" />仅本机可修改</span
+          >
+        </div>
+        <section class="admin-section">
+          <div class="section-heading">
+            <div>
+              <h2>共享范围</h2>
+              <p>控制另一台电脑可以看到哪些文件。</p>
+            </div>
+            <div class="segmented">
+              <button id="mode-folders" type="button">指定文件</button
+              ><button id="mode-whole" type="button">整机只读</button>
+            </div>
+          </div>
+          <div id="whole-warning" class="warning hidden">
+            <img src="/icons/triangle-alert.svg" alt="" />
+            <div>
+              <strong>整机访问会暴露当前进程能够读取的所有文件</strong>
+              <p>
+                包括文档、浏览器资料及可能存在的密钥。只有完全信任访问者并确认公网入口受到保护时才启用。远端始终不能修改或删除文件。
+              </p>
+              <div class="warning-controls">
+                <label class="check"
+                  ><input
+                    id="whole-understand"
+                    type="checkbox"
+                  />我了解整机共享的风险</label
+                ><input
+                  id="whole-confirm"
+                  placeholder="输入 OPEN ALL"
+                  aria-label="整机共享确认词"
+                /><button
+                  id="confirm-whole"
+                  class="button danger"
+                  type="button"
+                >
+                  启用整机只读
+                </button>
+              </div>
+            </div>
+          </div>
+          <div id="shared-roots">
+            <div id="admin-roots" class="admin-roots"></div>
+            <div class="picker-actions">
+              <button id="pick-folder" class="button secondary" type="button">
+                <img src="/icons/folder-plus.svg" alt="" />选择文件夹
+              </button>
+              <button id="pick-file" class="button secondary" type="button">
+                <img src="/icons/file-plus.svg" alt="" />选择文件
+              </button>
+            </div>
+            <details class="manual-path">
+              <summary>手动输入路径</summary>
+              <form id="add-root-form" class="inline-form">
+                <input
+                  id="new-root"
+                  placeholder="文件或文件夹的绝对路径"
+                  aria-label="文件或文件夹的绝对路径"
+                  required
+                />
+                <button class="button secondary" type="submit">添加</button>
+              </form>
+            </details>
+          </div>
+        </section>
+        <section class="admin-section">
+          <div class="section-heading">
+            <div>
+              <h2>访问身份</h2>
+              <p>远端可使用账号密码，或使用单独的访问密钥。</p>
+            </div>
+            <button id="rotate-key" class="button secondary" type="button">
+              <img src="/icons/key-round.svg" alt="" />轮换访问密钥
+            </button>
+          </div>
+          <div class="setting-line">
+            <span>主机地址</span><code id="admin-address"></code
+            ><button
+              id="copy-host-address"
+              class="icon-button"
+              type="button"
+              title="复制地址"
+              aria-label="复制地址"
+            >
+              <img src="/icons/copy.svg" alt="" />
+            </button>
+          </div>
+          <div class="setting-line">
+            <span>证书 SHA-256</span><code id="cert-fingerprint"></code>
+          </div>
+        </section>
+        <section class="admin-section">
+          <div class="section-heading">
+            <div>
+              <h2>接收文件</h2>
+              <p>远端上传只会进入专用收件箱。</p>
+            </div>
+            <label class="switch-line"
+              ><input id="allow-upload" type="checkbox" /><span
+                >允许推送</span
+              ></label
+            >
+          </div>
+          <div class="setting-line">
+            <span>单文件上限</span
+            ><input
+              id="upload-limit"
+              type="number"
+              min="1"
+              max="10240"
+              step="1"
+            /><span>MB</span
+            ><button id="save-options" class="button secondary" type="button">
+              保存
+            </button>
+          </div>
+          <div class="setting-line">
+            <span>收件箱</span><code id="inbox-path"></code>
+          </div>
+          <div id="inbox-list" class="inbox-list"></div>
+        </section>
+      </main>
+      <input id="file-input" type="file" multiple hidden />
+      <div id="toast" class="toast" role="status"></div>
+      <dialog id="key-dialog">
+        <div class="dialog-head">
+          <h2>访问密钥</h2>
+          <button
+            id="close-key-dialog"
+            class="icon-button"
+            type="button"
+            title="关闭"
+            aria-label="关闭"
+          >
+            <img src="/icons/x.svg" alt="" />
+          </button>
+        </div>
+        <div class="dialog-content">
+          <p>这串密钥只显示一次。重新生成后旧密钥无法再用于登录。</p>
+          <code id="key-value"></code
+          ><button id="copy-key" class="button primary" type="button">
+            <img src="/icons/copy.svg" alt="" />复制密钥
+          </button>
+        </div>
+      </dialog>
+    </div>
+  </body>
+</html>

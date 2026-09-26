@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#17221f" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='5' fill='%23ffd078'/%3E%3Ctext x='16' y='21' text-anchor='middle' font-family='Arial' font-size='13' font-weight='bold' fill='%2317221f'%3EP/%3C/text%3E%3C/svg%3E"
+    />
+    <title>渡口 · 对等互传</title>
+    <link rel="stylesheet" href="/style.css" />
+    <link rel="stylesheet" href="/local-picker.css" />
+    <link rel="stylesheet" href="/i18n.css" />
+    <script type="module" src="/app.js"></script>
+  </head>
+  <body>
+    <div id="setup" class="setup-shell hidden">
+      <form id="setup-form" class="setup-form">
+        <div class="mark">P/</div>
+        <h1>渡口</h1>
+        <p class="muted">连接你的设备</p>
+        <div class="setup-mode" role="group" aria-label="加入方式">
+          <button id="setup-account" type="button" class="active">
+            账号密码
+          </button>
+          <button id="setup-key" type="button">加入密钥</button>
+        </div>
+        <label
+          >服务端地址<input
+            name="serverUrl"
+            type="url"
+            value="http://127.0.0.1:8787"
+            required
+        /></label>
+        <label>设备名称<input name="name" autocomplete="off" required /></label>
+        <label class="account-field"
+          >账号<input name="username" autocomplete="username" required
+        /></label>
+        <label class="account-field"
+          >密码<input
+            name="password"
+            type="password"
+            autocomplete="current-password"
+            minlength="12"
+            required
+        /></label>
+        <label class="check account-field"
+          ><input name="createAccount" type="checkbox" /> 创建新账号</label
+        >
+        <label id="enrollment-wrap" class="hidden"
+          >一次性加入密钥<input name="enrollmentKey" autocomplete="off"
+        /></label>
+        <button class="primary" type="submit">连接设备</button>
+        <p id="setup-error" class="error" role="alert"></p>
+      </form>
+    </div>
+
+    <div id="app" class="app hidden">
+      <header class="topbar">
+        <div class="brand">
+          <span class="mark small">P/</span
+          ><span>渡口 <small>PORT</small></span>
+        </div>
+        <div class="top-actions">
+          <span id="connection" class="connection"></span
+          ><button id="settings-button" class="quiet" type="button">
+            设置
+          </button>
+        </div>
+      </header>
+      <div class="workspace">
+        <aside class="sidebar">
+          <div class="aside-head">
+            <h2>设备</h2>
+            <button
+              id="refresh-devices"
+              class="icon-button"
+              type="button"
+              title="刷新设备"
+              aria-label="刷新设备"
+            >
+              &#8635;
+            </button>
+          </div>
+          <div id="devices" class="devices"></div>
+          <div class="pair-actions">
+            <button id="invite-button" type="button">生成配对码</button
+            ><button id="join-button" type="button">输入配对码</button>
+          </div>
+          <div class="own-device">
+            <div class="eyebrow">本机</div>
+            <strong id="own-name" translate="no"></strong
+            ><code id="own-fingerprint"></code>
+          </div>
+        </aside>
+        <main class="main">
+          <div class="main-head">
+            <div>
+              <div class="eyebrow">远程文件</div>
+              <h1 id="device-title">选择设备</h1>
+            </div>
+            <button id="send-button" class="primary" type="button" disabled>
+              发送文件
+            </button>
+          </div>
+          <div id="breadcrumbs" class="breadcrumbs"></div>
+          <div class="file-tools">
+            <input
+              id="file-search"
+              type="search"
+              placeholder="搜索共享目录"
+              aria-label="搜索共享目录"
+            /><button id="reload-files" type="button" title="刷新文件">
+              刷新
+            </button>
+          </div>
+          <div id="file-message" class="file-message">
+            从左侧选择一台在线设备
+          </div>
+          <div id="files" class="file-list"></div>
+        </main>
+        <aside class="transfers-panel">
+          <div class="aside-head">
+            <h2>传输任务</h2>
+            <span id="transfer-count" class="count">0</span>
+          </div>
+          <div id="transfers" class="transfers"></div>
+        </aside>
+      </div>
+      <input id="file-input" type="file" multiple hidden />
+    </div>
+
+    <dialog id="settings-dialog">
+      <form method="dialog" class="dialog-head">
+        <h2>设置</h2>
+        <button class="icon-button" aria-label="关闭" title="关闭">
+          &times;
+        </button>
+      </form>
+      <div class="dialog-body">
+        <label
+          >共享目录<input
+            id="share-directory"
+            type="text"
+            placeholder="文件夹的绝对路径"
+        /></label>
+        <button id="pick-share" class="primary" type="button">
+          选择共享文件夹
+        </button>
+        <button id="save-share" type="button">手动保存路径</button>
+        <p class="muted">仅获得授权的设备可以浏览或下载该目录。</p>
+        <label
+          >接收文件目录<input id="downloads-directory" type="text" readonly
+        /></label>
+        <div class="divider"></div>
+        <button id="enroll-button" type="button">生成新设备加入密钥</button>
+        <h3>设备权限</h3>
+        <div id="permission-list"></div>
+      </div>
+    </dialog>
+    <dialog id="pair-dialog">
+      <form method="dialog" class="dialog-head">
+        <h2 id="pair-title">设备配对</h2>
+        <button class="icon-button" aria-label="关闭" title="关闭">
+          &times;
+        </button>
+      </form>
+      <div class="dialog-body">
+        <p id="pair-copy"></p>
+        <div id="pair-controls"></div>
+      </div>
+    </dialog>
+    <div id="toast" class="toast" role="status"></div>
+  </body>
+</html>

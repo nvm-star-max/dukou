@@ -1,0 +1,30 @@
+{
+  "name": "dukou",
+  "version": "0.1.0",
+  "description": "Decentralized peer-to-peer file transfer with an optional discovery relay",
+  "license": "MIT",
+  "repository": "https://github.com/nvm-star-max/dukou",
+  "private": true,
+  "type": "module",
+  "bin": { "dukou": "./src/cli.mjs" },
+  "scripts": {
+    "cli": "node src/cli.mjs",
+    "start": "node src/direct-host.mjs",
+    "host": "node src/direct-host.mjs",
+    "server": "node src/server.mjs",
+    "client": "node src/client.mjs",
+    "test": "node --test",
+    "format": "prettier --write src web web-direct shared-ui test"
+  },
+  "dependencies": {
+    "lucide-static": "^0.468.0",
+    "selfsigned": "^3.0.1",
+    "ws": "^8.18.3"
+  },
+  "devDependencies": {
+    "prettier": "^3.6.2"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}
